@@ -76,6 +76,8 @@ def main(argv: list[str] | None = None) -> int:
         handlers[args.command]()
     except (TaskManagerError, ValueError) as error:
         parser.exit(status=1, message=f"Error: {error}\n")
+    finally:
+        _close_repository(repository)
 
     return 0
 
@@ -119,3 +121,9 @@ def _handle_migrate_json(repository: TaskRepository, legacy_json_path: Path) -> 
         repository,
     ).execute()
     print(f"Migrated {migrated} task(s) into the database.")
+
+
+def _close_repository(repository: TaskRepository) -> None:
+    close = getattr(repository, "close", None)
+    if callable(close):
+        close()

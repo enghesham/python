@@ -1,1 +1,1 @@
-# This project uses only Python's standard library.
+SQLAlchemy==2.0.48

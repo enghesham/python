@@ -1,12 +1,12 @@
 # Task Manager
 
-A small task manager built with clean architecture principles and the Python standard library.
+A small task manager built with clean architecture principles, SQLite, and SQLAlchemy.
 
 ## Structure
 
 - `app/domain`: business entities and repository contracts
 - `app/application`: use cases and application-specific errors
-- `app/infrastructure/database`: SQLite connection and schema bootstrap
+- `app/infrastructure/database`: SQLAlchemy engine, session management, and models
 - `app/infrastructure/persistence`: persistence adapters
 - `app/presentation`: CLI entry point
 - `app/bootstrap.py`: dependency wiring that can be reused in FastAPI

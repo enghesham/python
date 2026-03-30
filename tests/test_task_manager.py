@@ -22,9 +22,11 @@ class TaskManagerTests(unittest.TestCase):
         self.temp_dir.mkdir(parents=True, exist_ok=True)
         self.database_path = self.temp_dir / "tasks.db"
         self.legacy_json_path = self.temp_dir / "tasks.json"
-        self.repository = SqliteTaskRepository(SqliteDatabase(self.database_path))
+        self.database = SqliteDatabase(self.database_path)
+        self.repository = SqliteTaskRepository(self.database)
 
     def tearDown(self) -> None:
+        self.repository.close()
         if self.database_path.exists():
             self.database_path.unlink()
         if self.legacy_json_path.exists():
