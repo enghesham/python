@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import unittest
 from pathlib import Path
 from uuid import uuid4
@@ -11,6 +12,7 @@ from app.application.use_cases.delete_task import DeleteTaskUseCase
 from app.application.use_cases.list_tasks import ListTasksUseCase
 from app.application.use_cases.migrate_tasks import MigrateTasksUseCase
 from app.bootstrap import build_settings
+from app.config import AppSettings
 from app.infrastructure.database.sqlite import SqliteDatabase
 from app.infrastructure.persistence.json_task_repository import JsonTaskRepository
 from app.infrastructure.persistence.sqlite_task_repository import SqliteTaskRepository
@@ -104,6 +106,43 @@ class TaskManagerTests(unittest.TestCase):
             settings.postgres_dsn,
             "postgresql+psycopg://user:pass@localhost:5432/app_db",
         )
+
+    def test_app_settings_can_read_runtime_environment(self) -> None:
+        previous_env = {
+            "APP_BACKEND": os.environ.get("APP_BACKEND"),
+            "SQLITE_DATABASE_PATH": os.environ.get("SQLITE_DATABASE_PATH"),
+            "POSTGRES_DSN": os.environ.get("POSTGRES_DSN"),
+            "LEGACY_JSON_PATH": os.environ.get("LEGACY_JSON_PATH"),
+            "APP_ENV": os.environ.get("APP_ENV"),
+            "APP_DEBUG": os.environ.get("APP_DEBUG"),
+        }
+
+        os.environ["APP_BACKEND"] = "postgresql"
+        os.environ["SQLITE_DATABASE_PATH"] = "data/custom.db"
+        os.environ["POSTGRES_DSN"] = (
+            "postgresql+psycopg://env:env@localhost:5432/env_db"
+        )
+        os.environ["LEGACY_JSON_PATH"] = "data/custom.json"
+        os.environ["APP_ENV"] = "testing"
+        os.environ["APP_DEBUG"] = "false"
+
+        settings = AppSettings()
+
+        self.assertEqual(settings.backend, "postgresql")
+        self.assertEqual(settings.database_path, Path("data/custom.db"))
+        self.assertEqual(
+            settings.postgres_dsn,
+            "postgresql+psycopg://env:env@localhost:5432/env_db",
+        )
+        self.assertEqual(settings.legacy_json_path, Path("data/custom.json"))
+        self.assertEqual(settings.app_env, "testing")
+        self.assertFalse(settings.app_debug)
+
+        for key, value in previous_env.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
 
 
 if __name__ == "__main__":

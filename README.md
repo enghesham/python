@@ -25,6 +25,21 @@ python main.py --backend postgresql --postgres-dsn "postgresql+psycopg://user:pa
 python main.py --backend postgresql --postgres-dsn "postgresql+psycopg://user:pass@localhost:5432/task_manager" list
 ```
 
+## Environment
+
+The app reads runtime settings from `.env` in the project root.
+
+```env
+APP_ENV=development
+APP_DEBUG=true
+APP_BACKEND=sqlite
+SQLITE_DATABASE_PATH=data/tasks.db
+POSTGRES_DSN=postgresql+psycopg://postgres:postgres@localhost:5432/task_manager
+LEGACY_JSON_PATH=data/tasks.json
+```
+
+The CLI flags still override `.env` values when you pass them explicitly.
+
 ## Run tests
 
 ```bash
