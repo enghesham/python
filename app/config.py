@@ -14,10 +14,10 @@ def _project_root() -> Path:
     return Path(__file__).resolve().parent.parent
 
 
-def load_env_file(env_path: Path | None = None) -> None:
-    path = env_path or _project_root() / ".env"
+def _parse_env_file(path: Path) -> dict[str, str]:
+    values: dict[str, str] = {}
     if not path.exists():
-        return
+        return values
 
     for raw_line in path.read_text(encoding="utf-8").splitlines():
         line = raw_line.strip()
@@ -27,11 +27,25 @@ def load_env_file(env_path: Path | None = None) -> None:
         key, value = line.split("=", 1)
         key = key.strip()
         value = value.strip().strip('"').strip("'")
-        if key and key not in os.environ:
+        if key:
+            values[key] = value
+
+    return values
+
+
+def load_env_files(project_root: Path | None = None) -> None:
+    root = project_root or _project_root()
+    base_values = _parse_env_file(root / ".env")
+    app_env = os.environ.get("APP_ENV") or base_values.get("APP_ENV", "development")
+    scoped_values = _parse_env_file(root / f".env.{app_env}")
+
+    merged_values = {**base_values, **scoped_values}
+    for key, value in merged_values.items():
+        if key not in os.environ:
             os.environ[key] = value
 
 
-load_env_file()
+load_env_files()
 
 
 @dataclass(frozen=True, slots=True)

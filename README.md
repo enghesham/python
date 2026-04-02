@@ -40,6 +40,37 @@ LEGACY_JSON_PATH=data/tasks.json
 
 The CLI flags still override `.env` values when you pass them explicitly.
 
+You can also scope settings per environment:
+
+```text
+.env
+.env.development
+.env.testing
+.env.production
+```
+
+Loading order:
+
+1. `.env`
+2. `.env.<APP_ENV>`
+3. Explicit CLI flags
+
+Example:
+
+```env
+# .env
+APP_ENV=development
+APP_BACKEND=sqlite
+SQLITE_DATABASE_PATH=data/tasks.db
+```
+
+```env
+# .env.production
+APP_BACKEND=postgresql
+APP_DEBUG=false
+POSTGRES_DSN=postgresql+psycopg://app:secret@db:5432/task_manager
+```
+
 ## Run tests
 
 ```bash

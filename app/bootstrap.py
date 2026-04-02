@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from app.config import AppSettings
+from app.config import AppSettings, load_env_files
 from app.domain.repositories.task_repository import TaskRepository
 from app.infrastructure.database.postgresql import PostgreSqlDatabase
 from app.infrastructure.database.sqlite import SqliteDatabase
@@ -18,6 +18,7 @@ def build_settings(
     postgres_dsn: str | None = None,
     legacy_json_path: str | Path | None = None,
 ) -> AppSettings:
+    load_env_files()
     settings = AppSettings()
 
     return AppSettings(

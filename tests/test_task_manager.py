@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import unittest
 from pathlib import Path
 from uuid import uuid4
@@ -12,7 +13,7 @@ from app.application.use_cases.delete_task import DeleteTaskUseCase
 from app.application.use_cases.list_tasks import ListTasksUseCase
 from app.application.use_cases.migrate_tasks import MigrateTasksUseCase
 from app.bootstrap import build_settings
-from app.config import AppSettings
+from app.config import AppSettings, load_env_files
 from app.infrastructure.database.sqlite import SqliteDatabase
 from app.infrastructure.persistence.json_task_repository import JsonTaskRepository
 from app.infrastructure.persistence.sqlite_task_repository import SqliteTaskRepository
@@ -34,7 +35,7 @@ class TaskManagerTests(unittest.TestCase):
             self.database_path.unlink()
         if self.legacy_json_path.exists():
             self.legacy_json_path.unlink()
-        self.temp_dir.rmdir()
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_create_and_list_tasks(self) -> None:
         CreateTaskUseCase(self.repository).execute("Write docs", "Document the CLI")
@@ -136,6 +137,61 @@ class TaskManagerTests(unittest.TestCase):
         )
         self.assertEqual(settings.legacy_json_path, Path("data/custom.json"))
         self.assertEqual(settings.app_env, "testing")
+        self.assertFalse(settings.app_debug)
+
+        for key, value in previous_env.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+
+    def test_scoped_env_file_can_override_base_values(self) -> None:
+        env_root = self.temp_dir / "env_case"
+        env_root.mkdir(parents=True, exist_ok=True)
+
+        (env_root / ".env").write_text(
+            "\n".join(
+                [
+                    "APP_ENV=production",
+                    "APP_BACKEND=sqlite",
+                    "SQLITE_DATABASE_PATH=data/base.db",
+                    "APP_DEBUG=true",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        (env_root / ".env.production").write_text(
+            "\n".join(
+                [
+                    "APP_BACKEND=postgresql",
+                    "APP_DEBUG=false",
+                    "POSTGRES_DSN=postgresql+psycopg://prod:prod@db:5432/prod_db",
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+        previous_env = {
+            "APP_ENV": os.environ.get("APP_ENV"),
+            "APP_BACKEND": os.environ.get("APP_BACKEND"),
+            "SQLITE_DATABASE_PATH": os.environ.get("SQLITE_DATABASE_PATH"),
+            "POSTGRES_DSN": os.environ.get("POSTGRES_DSN"),
+            "APP_DEBUG": os.environ.get("APP_DEBUG"),
+        }
+
+        for key in previous_env:
+            os.environ.pop(key, None)
+
+        load_env_files(env_root)
+        settings = AppSettings()
+
+        self.assertEqual(settings.app_env, "production")
+        self.assertEqual(settings.backend, "postgresql")
+        self.assertEqual(settings.database_path, Path("data/base.db"))
+        self.assertEqual(
+            settings.postgres_dsn,
+            "postgresql+psycopg://prod:prod@db:5432/prod_db",
+        )
         self.assertFalse(settings.app_debug)
 
         for key, value in previous_env.items():

@@ -127,7 +127,10 @@ def _handle_init_db(settings: AppSettings) -> None:
     if settings.backend == "postgresql":
         location = settings.postgres_dsn
 
-    print(f"Database initialized for backend {settings.backend}: {location}")
+    print(
+        f"Database initialized for env {settings.app_env} "
+        f"with backend {settings.backend}: {location}"
+    )
 
 
 def _handle_migrate_json(repository: TaskRepository, legacy_json_path: Path) -> None:
