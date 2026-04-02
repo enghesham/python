@@ -10,6 +10,7 @@ from app.application.use_cases.delete_task import DeleteTaskUseCase
 from app.application.use_cases.list_tasks import ListTasksUseCase
 from app.application.use_cases.migrate_tasks import MigrateTasksUseCase
 from app.bootstrap import build_settings, build_task_repository
+from app.config import AppSettings
 from app.domain.repositories.task_repository import TaskRepository
 from app.infrastructure.persistence.json_task_repository import JsonTaskRepository
 
@@ -17,9 +18,20 @@ from app.infrastructure.persistence.json_task_repository import JsonTaskReposito
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Clean architecture task manager")
     parser.add_argument(
+        "--backend",
+        choices=("sqlite", "postgresql"),
+        default="sqlite",
+        help="Which persistence backend to use.",
+    )
+    parser.add_argument(
         "--database",
         default="data/tasks.db",
         help="Path to the SQLite database file.",
+    )
+    parser.add_argument(
+        "--postgres-dsn",
+        default="postgresql+psycopg://postgres:postgres@localhost:5432/task_manager",
+        help="PostgreSQL DSN used when backend is postgresql.",
     )
     parser.add_argument(
         "--legacy-json",
@@ -55,17 +67,19 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     settings = build_settings(
+        backend=args.backend,
         database_path=args.database,
+        postgres_dsn=args.postgres_dsn,
         legacy_json_path=args.legacy_json,
     )
-    repository = build_task_repository(settings.database_path)
+    repository = build_task_repository(settings=settings)
 
     handlers = {
         "add": lambda: _handle_add(repository, args.title, args.description),
         "list": lambda: _handle_list(repository),
         "complete": lambda: _handle_complete(repository, args.task_id),
         "delete": lambda: _handle_delete(repository, args.task_id),
-        "init-db": lambda: _handle_init_db(settings.database_path),
+        "init-db": lambda: _handle_init_db(settings),
         "migrate-json": lambda: _handle_migrate_json(
             repository,
             settings.legacy_json_path,
@@ -107,9 +121,13 @@ def _handle_delete(repository: TaskRepository, task_id: str) -> None:
     print(f"Deleted task {task_id}")
 
 
-def _handle_init_db(database_path: Path) -> None:
-    build_task_repository(database_path)
-    print(f"Database initialized at {database_path}")
+def _handle_init_db(settings: AppSettings) -> None:
+    build_task_repository(settings=settings)
+    location = settings.database_path
+    if settings.backend == "postgresql":
+        location = settings.postgres_dsn
+
+    print(f"Database initialized for backend {settings.backend}: {location}")
 
 
 def _handle_migrate_json(repository: TaskRepository, legacy_json_path: Path) -> None:

@@ -10,6 +10,7 @@ from app.application.use_cases.create_task import CreateTaskUseCase
 from app.application.use_cases.delete_task import DeleteTaskUseCase
 from app.application.use_cases.list_tasks import ListTasksUseCase
 from app.application.use_cases.migrate_tasks import MigrateTasksUseCase
+from app.bootstrap import build_settings
 from app.infrastructure.database.sqlite import SqliteDatabase
 from app.infrastructure.persistence.json_task_repository import JsonTaskRepository
 from app.infrastructure.persistence.sqlite_task_repository import SqliteTaskRepository
@@ -91,6 +92,18 @@ class TaskManagerTests(unittest.TestCase):
         self.assertEqual(migrated_count, 1)
         self.assertIsNotNone(migrated_task)
         self.assertEqual(migrated_task.title, "Legacy task")
+
+    def test_build_settings_can_switch_to_postgresql(self) -> None:
+        settings = build_settings(
+            backend="postgresql",
+            postgres_dsn="postgresql+psycopg://user:pass@localhost:5432/app_db",
+        )
+
+        self.assertEqual(settings.backend, "postgresql")
+        self.assertEqual(
+            settings.postgres_dsn,
+            "postgresql+psycopg://user:pass@localhost:5432/app_db",
+        )
 
 
 if __name__ == "__main__":
