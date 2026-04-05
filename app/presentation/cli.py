@@ -20,22 +20,22 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--backend",
         choices=("sqlite", "postgresql"),
-        default="sqlite",
+        default=None,
         help="Which persistence backend to use.",
     )
     parser.add_argument(
         "--database",
-        default="data/tasks.db",
+        default=None,
         help="Path to the SQLite database file.",
     )
     parser.add_argument(
         "--postgres-dsn",
-        default="postgresql+psycopg://postgres:postgres@localhost:5432/task_manager",
+        default=None,
         help="PostgreSQL DSN used when backend is postgresql.",
     )
     parser.add_argument(
         "--legacy-json",
-        default="data/tasks.json",
+        default=None,
         help="Path to the legacy JSON storage file used for migration.",
     )
 
