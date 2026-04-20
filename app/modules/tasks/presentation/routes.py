@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -38,13 +38,7 @@ def get_task(
     task_id: str,
     service: TaskService = Depends(get_task_service),
 ):
-    task = service.get_task(task_id)
-    if not task:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Task not found",
-        )
-    return task
+    return service.get_task(task_id)
 
 
 @router.put("/{task_id}", response_model=TaskResponseSchema)
@@ -53,13 +47,7 @@ def update_task(
     payload: TaskUpdateSchema,
     service: TaskService = Depends(get_task_service),
 ):
-    task = service.update_task(task_id, payload)
-    if not task:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Task not found",
-        )
-    return task
+    return service.update_task(task_id, payload)
 
 
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -67,10 +55,5 @@ def delete_task(
     task_id: str,
     service: TaskService = Depends(get_task_service),
 ):
-    deleted = service.delete_task(task_id)
-    if not deleted:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Task not found",
-        )
+    service.delete_task(task_id)
     return None
